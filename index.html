@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distribuidora Stark - Gestión Completa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        .vencida { background-color: #fff1f2; border-left: 5px solid #ef4444; }
+        .status-badge { font-size: 0.65rem; font-weight: 800; padding: 0.25rem 0.5rem; border-radius: 9999px; text-transform: uppercase; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen text-slate-900">
+
+    <div id="app" class="max-w-6xl mx-auto p-4 lg:p-10">
+        <!-- Encabezado -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+            <div class="flex items-center gap-4">
+                <div class="bg-blue-700 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl rotate-3">
+                    <span class="text-white font-black text-2xl">DS</span>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-black tracking-tight text-slate-800">Distribuidora Stark</h1>
+                    <p class="text-slate-500 font-medium text-sm">Panel de Administración de Inventario</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-col items-end gap-3">
+                <div class="flex items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
+                    <span class="text-xs font-black text-slate-400 pl-2 text-nowrap">SEDE ACTUAL:</span>
+                    <select id="sedeSelect" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-bold outline-none cursor-pointer hover:bg-blue-700 transition-colors">
+                        <option value="Caracas">Caracas</option>
+                        <option value="Maracay">Maracay</option>
+                    </select>
+                </div>
+                <div id="authStatus" class="text-[10px] font-mono text-slate-400 bg-white px-2 py-1 rounded-md border italic">Iniciando sesión...</div>
+            </div>
+        </div>
+
+        <!-- Tarjetas de Resumen -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Stock en Sede</p>
+                <h3 id="statTotalStock" class="text-4xl font-black text-slate-800">0</h3>
+            </div>
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Cuentas por Cobrar</p>
+                <h3 id="statFacturas" class="text-4xl font-black text-orange-500">0</h3>
+            </div>
+            <div class="bg-blue-600 p-6 rounded-3xl shadow-xl text-white flex flex-col justify-center">
+                <p class="text-xs font-bold text-blue-200 uppercase tracking-widest mb-1">Recaudado (Sede)</p>
+                <h3 id="statDinero" class="text-4xl font-black">$ 0.00</h3>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Listados -->
+            <div class="lg:col-span-8 space-y-8">
+                <!-- Inventario -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="p-6 border-b bg-slate-50/50 flex justify-between items-center">
+                        <h2 class="font-black text-slate-800 uppercase text-sm tracking-widest">Inventario Real: <span id="labelSede1" class="text-blue-600">Caracas</span></h2>
+                    </div>
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                            <tr>
+                                <th class="px-8 py-4">Producto</th>
+                                <th class="px-8 py-4">Existencia</th>
+                                <th class="px-8 py-4">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaStock" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+
+                <!-- Facturas -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="p-6 border-b bg-slate-50/50">
+                        <h2 class="font-black text-slate-800 uppercase text-sm tracking-widest">Cuentas Pendientes de Cobro</h2>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-[10px] font-black uppercase text-slate-400">
+                                <tr>
+                                    <th class="px-6 py-4">Cliente / Detalle</th>
+                                    <th class="px-6 py-4">Vencimiento</th>
+                                    <th class="px-6 py-4 text-right">Monto</th>
+                                    <th class="px-6 py-4 text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="listaFacturas" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formularios -->
+            <div class="lg:col-span-4 space-y-6">
+                <!-- Ajuste Stock -->
+                <div class="bg-white p-8 rounded-3xl shadow-md border border-slate-100">
+                    <h2 class="font-black text-slate-800 mb-6 text-lg tracking-tight">Cargar/Descargar Stock</h2>
+                    <div class="space-y-4">
+                        <select id="prodInput" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold">
+                            <option value="Heineken">Cerveza Heineken</option>
+                            <option value="Budweiser">Cerveza Budweiser</option>
+                            <option value="Smirnoff">Smirnoff</option>
+                            <option value="Gatorade">Gatorade</option>
+                        </select>
+                        <input type="number" id="cantInput" placeholder="Cantidad" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-black text-2xl text-blue-600">
+                        <div class="grid grid-cols-2 gap-3">
+                            <button id="btnAdd" class="bg-emerald-500 text-white py-4 rounded-2xl font-black hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-100 disabled:opacity-50">ENTRADA</button>
+                            <button id="btnRem" class="bg-rose-500 text-white py-4 rounded-2xl font-black hover:bg-rose-600 transition-all shadow-lg shadow-rose-100 disabled:opacity-50">SALIDA</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Factura Nueva -->
+                <div class="bg-white p-8 rounded-3xl shadow-md border border-slate-100">
+                    <h2 class="font-black text-slate-800 mb-6 text-lg tracking-tight">Crear Nueva Factura</h2>
+                    <div class="space-y-4">
+                        <input type="text" id="fClient" placeholder="Nombre del Cliente" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-medium outline-none">
+                        <textarea id="fDetails" placeholder="¿Qué contiene la factura? (ej. 10 cajas Heineken)" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-medium outline-none h-24 text-sm"></textarea>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[10px] font-black text-slate-400 ml-2 uppercase">Fecha de Vencimiento</label>
+                            <input type="date" id="fDate" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none">
+                        </div>
+                        <input type="number" id="fAmount" placeholder="Monto Total $" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-black text-2xl text-orange-600 outline-none">
+                        <button id="btnSaveFact" class="w-full bg-blue-700 text-white py-4 rounded-2xl font-black hover:bg-blue-800 transition-all shadow-xl disabled:opacity-50">REGISTRAR DEUDA</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Cobro -->
+    <div id="modalPay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-6 z-50">
+        <div class="bg-white rounded-[40px] p-10 max-w-sm w-full shadow-2xl">
+            <h3 class="text-2xl font-black mb-2 text-slate-800">Procesar Pago</h3>
+            <p class="text-slate-500 mb-6 text-sm">Selecciona el método con el que recibiste el dinero.</p>
+            <div id="payDisplay" class="text-4xl font-black text-center text-blue-700 mb-8">$ 0.00</div>
+            <select id="payMethod" class="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl mb-8 font-black">
+                <option value="Efectivo">Efectivo</option>
+                <option value="Pago Móvil">Pago Móvil</option>
+                <option value="Zelle">Zelle</option>
+                <option value="Transferencia">Transferencia</option>
+                <option value="USDT">USDT</option>
+            </select>
+            <div class="grid grid-cols-2 gap-3">
+                <button id="confirmPay" class="bg-blue-700 text-white py-4 rounded-2xl font-black shadow-lg">CONFIRMAR</button>
+                <button onclick="document.getElementById('modalPay').classList.add('hidden')" class="bg-slate-100 text-slate-500 py-4 rounded-2xl font-black">CERRAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast de Notificación -->
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-8 py-4 rounded-2xl shadow-2xl opacity-0 transition-all duration-300 z-[100] font-black text-sm pointer-events-none uppercase tracking-widest">
+        Mensaje
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'stark-dist-master';
+
+        let sedeActual = "Caracas";
+        let datos = null;
+        let idFacturaACobrar = null;
+
+        // Path específico según RULE 1
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'stark_dist_v5', 'master');
+
+        const notify = (m) => {
+            const el = document.getElementById('toast');
+            el.innerText = m;
+            el.style.opacity = '1';
+            el.style.transform = 'translate(-50%, -20px)';
+            setTimeout(() => {
+                el.style.opacity = '0';
+                el.style.transform = 'translate(-50%, 0)';
+            }, 3000);
+        };
+
+        const renderUI = () => {
+            if (!datos) return;
+
+            // Renderizado de Inventario
+            const containerStock = document.getElementById('listaStock');
+            containerStock.innerHTML = '';
+            let tStock = 0;
+            
+            const inventarioSede = datos[sedeActual] || {};
+            Object.entries(inventarioSede).forEach(([prod, cant]) => {
+                tStock += cant;
+                containerStock.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-8 py-4 font-bold text-slate-700">${prod}</td>
+                        <td class="px-8 py-4 text-xl font-black">${cant}</td>
+                        <td class="px-8 py-4">
+                            <span class="status-badge ${cant < 15 ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}">
+                                ${cant < 15 ? 'REPONER' : 'EXISTENCIA'}
+                            </span>
+                        </td>
+                    </tr>`;
+            });
+
+            // Renderizado de Facturas
+            const containerFact = document.getElementById('listaFacturas');
+            containerFact.innerHTML = '';
+            let fP = 0, dR = 0;
+            const hoy = new Date();
+            hoy.setHours(0,0,0,0);
+
+            const facturasSede = (datos.facturas && datos.facturas[sedeActual]) ? datos.facturas[sedeActual] : [];
+
+            facturasSede.forEach(f => {
+                if (!f.pago) fP++; else dR += (f.monto || 0);
+                
+                const fechaVen = new Date(f.vence);
+                fechaVen.setHours(23,59,59,999);
+                const esVencida = fechaVen < hoy && !f.pago;
+
+                containerFact.innerHTML += `
+                    <tr class="${esVencida ? 'vencida' : 'hover:bg-slate-50'}">
+                        <td class="px-6 py-4">
+                            <div class="font-black text-slate-800 uppercase text-xs">${f.cliente}</div>
+                            <div class="text-[10px] text-slate-500 italic mt-1">${f.detalles || 'Sin descripción'}</div>
+                        </td>
+                        <td class="px-6 py-4 font-bold text-xs ${esVencida ? 'text-rose-600 font-black' : 'text-slate-400'}">
+                            ${f.vence ? f.vence.split('-').reverse().join('/') : 'S/F'}
+                            ${esVencida ? '<br><span class="text-[8px] uppercase">¡VENCIDA!</span>' : ''}
+                        </td>
+                        <td class="px-6 py-4 text-right font-black text-slate-900">$${(f.monto || 0).toFixed(2)}</td>
+                        <td class="px-6 py-4 text-center">
+                            ${f.pago ? 
+                                `<span class="text-emerald-600 font-black text-[10px] bg-emerald-50 px-2 py-1 rounded-md uppercase border border-emerald-100">${f.metodo}</span>` : 
+                                `<button onclick="window.payModal('${f.id}', ${f.monto})" class="bg-blue-600 text-white px-4 py-1.5 rounded-xl font-black text-xs hover:bg-blue-700 transition-all shadow-md">COBRAR</button>`
+                            }
+                        </td>
+                    </tr>`;
+            });
+
+            document.getElementById('statTotalStock').innerText = tStock;
+            document.getElementById('statFacturas').innerText = fP;
+            document.getElementById('statDinero').innerText = `$ ${dR.toLocaleString()}`;
+            document.getElementById('labelSede1').innerText = sedeActual;
+        };
+
+        // Acciones de Base de Datos con validación de carga (Fixing "null reading Caracas")
+        window.operarStock = async (tipo) => {
+            if (!datos) return notify("ESPERANDO CONEXIÓN...");
+            
+            const prod = document.getElementById('prodInput').value;
+            const cant = parseInt(document.getElementById('cantInput').value);
+            if (!cant || cant <= 0) return notify("CANTIDAD NO VÁLIDA");
+
+            const actual = (datos[sedeActual] && datos[sedeActual][prod]) ? datos[sedeActual][prod] : 0;
+            const nuevo = tipo === '+' ? actual + cant : actual - cant;
+            if (nuevo < 0) return notify("STOCK INSUFICIENTE");
+
+            try {
+                await updateDoc(docRef, { [`${sedeActual}.${prod}`]: nuevo });
+                document.getElementById('cantInput').value = '';
+                notify("INVENTARIO ACTUALIZADO ✅");
+            } catch (e) { notify("ERROR AL GUARDAR"); }
+        };
+
+        window.guardarFactura = async () => {
+            if (!datos) return notify("ESPERANDO CONEXIÓN...");
+
+            const cliente = document.getElementById('fClient').value.trim();
+            const detalles = document.getElementById('fDetails').value.trim();
+            const vence = document.getElementById('fDate').value;
+            const monto = parseFloat(document.getElementById('fAmount').value);
+            
+            if (!cliente || !monto || !vence) return notify("FALTAN DATOS OBLIGATORIOS");
+
+            const nuevaFactura = {
+                id: Date.now().toString(),
+                cliente,
+                detalles,
+                vence,
+                monto,
+                pago: false
+            };
+
+            const listadoActual = (datos.facturas && datos.facturas[sedeActual]) ? datos.facturas[sedeActual] : [];
+            const listado = [...listadoActual, nuevaFactura];
+
+            try {
+                await updateDoc(docRef, { [`facturas.${sedeActual}`]: listado });
+                document.getElementById('fClient').value = '';
+                document.getElementById('fDetails').value = '';
+                document.getElementById('fAmount').value = '';
+                document.getElementById('fDate').value = '';
+                notify("FACTURA GENERADA ✅");
+            } catch (e) { notify("ERROR DE CONEXIÓN"); }
+        };
+
+        window.payModal = (id, monto) => {
+            idFacturaACobrar = id;
+            document.getElementById('payDisplay').innerText = `$ ${monto.toFixed(2)}`;
+            document.getElementById('modalPay').classList.remove('hidden');
+        };
+
+        window.confirmarPago = async () => {
+            if (!datos) return;
+            const met = document.getElementById('payMethod').value;
+            const facturasSede = (datos.facturas && datos.facturas[sedeActual]) ? datos.facturas[sedeActual] : [];
+            const facturasActualizadas = facturasSede.map(f => 
+                f.id === idFacturaACobrar ? {...f, pago: true, metodo: met} : f
+            );
+            try {
+                await updateDoc(docRef, { [`facturas.${sedeActual}`]: facturasActualizadas });
+                document.getElementById('modalPay').classList.add('hidden');
+                notify("PAGO REGISTRADO 🎉");
+            } catch (e) { notify("ERROR AL COBRAR"); }
+        };
+
+        // Inicio y Sincronización (Siguiendo RULE 3: Auth antes que Query)
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Auth error:", error);
+                notify("ERROR DE AUTENTICACIÓN");
+            }
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('authStatus').innerText = "CONECTADO - NUBE STARK";
+                onSnapshot(docRef, (snap) => {
+                    if (snap.exists()) {
+                        datos = snap.data();
+                        renderUI();
+                    } else {
+                        const initial = {
+                            Caracas: { Heineken: 100, Budweiser: 100, Smirnoff: 50, Gatorade: 200 },
+                            Maracay: { Heineken: 50, Budweiser: 50, Smirnoff: 20, Gatorade: 100 },
+                            facturas: { Caracas: [], Maracay: [] }
+                        };
+                        setDoc(docRef, initial);
+                    }
+                }, (err) => {
+                    console.error("Firestore error:", err);
+                    notify("ERROR DE SINCRONIZACIÓN");
+                });
+            } else {
+                document.getElementById('authStatus').innerText = "DESCONECTADO";
+            }
+        });
+
+        // Iniciar flujo
+        initAuth();
+
+        // Eventos de botones
+        document.getElementById('sedeSelect').onchange = (e) => { sedeActual = e.target.value; renderUI(); };
+        document.getElementById('btnAdd').onclick = () => operarStock('+');
+        document.getElementById('btnRem').onclick = () => operarStock('-');
+        document.getElementById('btnSaveFact').onclick = guardarFactura;
+        document.getElementById('confirmPay').onclick = confirmarPago;
+
+    </script>
+</body>
+</html>
