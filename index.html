@@ -37,7 +37,7 @@
                         <option value="Maracay">Maracay</option>
                     </select>
                 </div>
-                <div id="authStatus" class="text-[10px] font-mono text-slate-400 bg-white px-2 py-1 rounded-md border italic">Iniciando sesión...</div>
+                <div id="authStatus" class="text-[10px] font-mono text-slate-400 bg-white px-2 py-1 rounded-md border italic text-center min-w-[150px]">Iniciando sesión...</div>
             </div>
         </div>
 
@@ -164,7 +164,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
@@ -255,7 +255,7 @@
             document.getElementById('labelSede1').innerText = sedeActual;
         };
 
-        // Acciones de Base de Datos con validación de carga (Fixing "null reading Caracas")
+        // Acciones de Base de Datos
         window.operarStock = async (tipo) => {
             if (!datos) return notify("ESPERANDO CONEXIÓN...");
             
@@ -326,9 +326,28 @@
             } catch (e) { notify("ERROR AL COBRAR"); }
         };
 
-        // Inicio y Sincronización (Siguiendo RULE 3: Auth antes que Query)
+        // Función para inicializar datos si el documento no existe (Online Database creation)
+        const checkAndInitDB = async () => {
+            try {
+                const snap = await getDoc(docRef);
+                if (!snap.exists()) {
+                    const initial = {
+                        Caracas: { Heineken: 100, Budweiser: 100, Smirnoff: 50, Gatorade: 200 },
+                        Maracay: { Heineken: 50, Budweiser: 50, Smirnoff: 20, Gatorade: 100 },
+                        facturas: { Caracas: [], Maracay: [] }
+                    };
+                    await setDoc(docRef, initial);
+                    console.log("Base de datos inicializada online.");
+                }
+            } catch (e) {
+                console.error("Error inicializando DB:", e);
+            }
+        };
+
+        // Inicio y Sincronización (RULE 3: Auth antes que Query)
         const initAuth = async () => {
             try {
+                document.getElementById('authStatus').innerText = "AUTENTICANDO...";
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
@@ -336,28 +355,28 @@
                 }
             } catch (error) {
                 console.error("Auth error:", error);
+                document.getElementById('authStatus').innerText = "ERROR DE ACCESO";
                 notify("ERROR DE AUTENTICACIÓN");
             }
         };
 
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
-                document.getElementById('authStatus').innerText = "CONECTADO - NUBE STARK";
+                document.getElementById('authStatus').innerText = "SINCRONIZANDO...";
+                
+                // Asegurar que existe el documento en la nube
+                await checkAndInitDB();
+
+                // Listener en tiempo real
                 onSnapshot(docRef, (snap) => {
                     if (snap.exists()) {
                         datos = snap.data();
+                        document.getElementById('authStatus').innerText = "EN LÍNEA ✅";
                         renderUI();
-                    } else {
-                        const initial = {
-                            Caracas: { Heineken: 100, Budweiser: 100, Smirnoff: 50, Gatorade: 200 },
-                            Maracay: { Heineken: 50, Budweiser: 50, Smirnoff: 20, Gatorade: 100 },
-                            facturas: { Caracas: [], Maracay: [] }
-                        };
-                        setDoc(docRef, initial);
                     }
                 }, (err) => {
                     console.error("Firestore error:", err);
-                    notify("ERROR DE SINCRONIZACIÓN");
+                    document.getElementById('authStatus').innerText = "ERROR DE NUBE";
                 });
             } else {
                 document.getElementById('authStatus').innerText = "DESCONECTADO";
