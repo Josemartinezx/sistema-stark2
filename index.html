@@ -3,133 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Distribuidora Stark - Gestión Completa</title>
+    <title>Distribuidora Stark - Gestión</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
-        .vencida { background-color: #fff1f2; border-left: 5px solid #ef4444; }
-        .status-badge { font-size: 0.65rem; font-weight: 800; padding: 0.25rem 0.5rem; border-radius: 9999px; text-transform: uppercase; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .vencida { background-color: #fef2f2; border-left: 4px solid #ef4444; }
+        .loading-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
 <body class="min-h-screen text-slate-900">
 
-    <div id="app" class="max-w-6xl mx-auto p-4 lg:p-10">
-        <!-- Encabezado -->
-        <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+    <div id="app" class="max-w-5xl mx-auto p-4 md:p-8">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
             <div class="flex items-center gap-4">
-                <div class="bg-blue-700 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl rotate-3">
-                    <span class="text-white font-black text-2xl">DS</span>
-                </div>
+                <div class="bg-blue-600 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg font-black text-xl">S</div>
                 <div>
-                    <h1 class="text-3xl font-black tracking-tight text-slate-800">Distribuidora Stark</h1>
-                    <p class="text-slate-500 font-medium text-sm">Panel de Administración de Inventario</p>
+                    <h1 class="text-2xl font-black text-slate-800">Distribuidora Stark</h1>
+                    <div id="authStatus" class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Iniciando sistema...</div>
                 </div>
             </div>
             
-            <div class="flex flex-col items-end gap-3">
-                <div class="flex items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
-                    <span class="text-xs font-black text-slate-400 pl-2 text-nowrap">SEDE ACTUAL:</span>
-                    <select id="sedeSelect" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-bold outline-none cursor-pointer hover:bg-blue-700 transition-colors">
-                        <option value="Caracas">Caracas</option>
-                        <option value="Maracay">Maracay</option>
-                    </select>
-                </div>
-                <div id="authStatus" class="text-[10px] font-mono text-slate-400 bg-white px-2 py-1 rounded-md border italic text-center min-w-[150px]">Estado: Desconectado</div>
+            <div class="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm">
+                <span class="text-[10px] font-black text-slate-400 px-2 uppercase">Sede:</span>
+                <select id="sedeSelect" class="bg-slate-100 text-slate-800 px-4 py-2 rounded-lg font-bold outline-none cursor-pointer text-sm">
+                    <option value="Caracas">Caracas</option>
+                    <option value="Maracay">Maracay</option>
+                </select>
             </div>
         </div>
 
-        <!-- Tarjetas de Resumen -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Stock en Sede</p>
-                <h3 id="statTotalStock" class="text-4xl font-black text-slate-800">0</h3>
+        <!-- Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Stock Actual</p>
+                <h3 id="statTotalStock" class="text-3xl font-black text-slate-800">0</h3>
             </div>
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Cuentas por Cobrar</p>
-                <h3 id="statFacturas" class="text-4xl font-black text-orange-500">0</h3>
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Cuentas Pendientes</p>
+                <h3 id="statFacturas" class="text-3xl font-black text-orange-500">0</h3>
             </div>
-            <div class="bg-blue-600 p-6 rounded-3xl shadow-xl text-white flex flex-col justify-center">
-                <p class="text-xs font-bold text-blue-200 uppercase tracking-widest mb-1">Recaudado (Sede)</p>
-                <h3 id="statDinero" class="text-4xl font-black">$ 0.00</h3>
+            <div class="bg-blue-600 p-6 rounded-2xl shadow-lg text-white">
+                <p class="text-[10px] font-black text-blue-200 uppercase mb-1">Recaudación</p>
+                <h3 id="statDinero" class="text-3xl font-black">$ 0.00</h3>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <!-- Listados -->
-            <div class="lg:col-span-8 space-y-8">
-                <!-- Inventario -->
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div class="p-6 border-b bg-slate-50/50 flex justify-between items-center">
-                        <h2 class="font-black text-slate-800 uppercase text-sm tracking-widest">Inventario Real: <span id="labelSede1" class="text-blue-600">Caracas</span></h2>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Inventario -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b bg-slate-50 flex justify-between items-center">
+                        <h2 class="font-black text-xs text-slate-500 uppercase tracking-widest">Inventario en <span id="labelSede" class="text-blue-600">Caracas</span></h2>
                     </div>
-                    <table class="w-full text-left">
-                        <thead class="bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                            <tr>
-                                <th class="px-8 py-4">Producto</th>
-                                <th class="px-8 py-4">Existencia</th>
-                                <th class="px-8 py-4">Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody id="listaStock" class="divide-y divide-slate-100"></tbody>
-                    </table>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50/50 text-[10px] font-bold uppercase text-slate-400">
+                                <tr>
+                                    <th class="px-6 py-3">Producto</th>
+                                    <th class="px-6 py-3">Cantidad</th>
+                                    <th class="px-6 py-3">Estatus</th>
+                                </tr>
+                            </thead>
+                            <tbody id="listaStock" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- Facturas -->
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div class="p-6 border-b bg-slate-50/50">
-                        <h2 class="font-black text-slate-800 uppercase text-sm tracking-widest">Cuentas Pendientes de Cobro</h2>
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b bg-slate-50">
+                        <h2 class="font-black text-xs text-slate-500 uppercase tracking-widest">Cuentas por Cobrar</h2>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-sm">
-                            <thead class="bg-slate-50 text-[10px] font-black uppercase text-slate-400">
+                            <thead class="bg-slate-50/50 text-[10px] font-bold uppercase text-slate-400">
                                 <tr>
-                                    <th class="px-6 py-4">Cliente / Detalle</th>
-                                    <th class="px-6 py-4">Vencimiento</th>
-                                    <th class="px-6 py-4 text-right">Monto</th>
-                                    <th class="px-6 py-4 text-center">Acción</th>
+                                    <th class="px-6 py-3">Cliente</th>
+                                    <th class="px-6 py-3">Vence</th>
+                                    <th class="px-6 py-3 text-right">Monto</th>
+                                    <th class="px-6 py-3"></th>
                                 </tr>
                             </thead>
-                            <tbody id="listaFacturas" class="divide-y divide-slate-100"></tbody>
+                            <tbody id="listaFacturas" class="divide-y divide-slate-100 text-xs font-medium"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Formularios -->
-            <div class="lg:col-span-4 space-y-6">
-                <!-- Ajuste Stock -->
-                <div class="bg-white p-8 rounded-3xl shadow-md border border-slate-100">
-                    <h2 class="font-black text-slate-800 mb-6 text-lg tracking-tight">Cargar/Descargar Stock</h2>
-                    <div class="space-y-4">
-                        <select id="prodInput" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold">
+            <!-- Acciones -->
+            <div class="space-y-6">
+                <!-- Stock Form -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                    <h2 class="font-black text-slate-800 mb-4 text-sm uppercase">Actualizar Stock</h2>
+                    <div class="space-y-3">
+                        <select id="prodInput" class="w-full p-3 bg-slate-50 border rounded-xl font-bold text-sm outline-none">
                             <option value="Heineken">Cerveza Heineken</option>
                             <option value="Budweiser">Cerveza Budweiser</option>
                             <option value="Smirnoff">Smirnoff</option>
                             <option value="Gatorade">Gatorade</option>
                         </select>
-                        <input type="number" id="cantInput" placeholder="Cantidad" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-black text-2xl text-blue-600">
-                        <div class="grid grid-cols-2 gap-3">
-                            <button id="btnAdd" class="bg-emerald-500 text-white py-4 rounded-2xl font-black hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-100 disabled:opacity-50">ENTRADA</button>
-                            <button id="btnRem" class="bg-rose-500 text-white py-4 rounded-2xl font-black hover:bg-rose-600 transition-all shadow-lg shadow-rose-100 disabled:opacity-50">SALIDA</button>
+                        <input type="number" id="cantInput" placeholder="Cantidad" class="w-full p-3 bg-slate-50 border rounded-xl font-black text-xl text-blue-600 outline-none">
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="btnAdd" class="bg-emerald-500 text-white py-3 rounded-xl font-black text-xs hover:bg-emerald-600">ENTRADA</button>
+                            <button id="btnRem" class="bg-rose-500 text-white py-3 rounded-xl font-black text-xs hover:bg-rose-600">SALIDA</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Factura Nueva -->
-                <div class="bg-white p-8 rounded-3xl shadow-md border border-slate-100">
-                    <h2 class="font-black text-slate-800 mb-6 text-lg tracking-tight">Crear Nueva Factura</h2>
-                    <div class="space-y-4">
-                        <input type="text" id="fClient" placeholder="Nombre del Cliente" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-medium outline-none">
-                        <textarea id="fDetails" placeholder="¿Qué contiene la factura? (ej. 10 cajas Heineken)" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-medium outline-none h-24 text-sm"></textarea>
-                        <div class="flex flex-col gap-1">
-                            <label class="text-[10px] font-black text-slate-400 ml-2 uppercase">Fecha de Vencimiento</label>
-                            <input type="date" id="fDate" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none">
-                        </div>
-                        <input type="number" id="fAmount" placeholder="Monto Total $" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-black text-2xl text-orange-600 outline-none">
-                        <button id="btnSaveFact" class="w-full bg-blue-700 text-white py-4 rounded-2xl font-black hover:bg-blue-800 transition-all shadow-xl disabled:opacity-50">REGISTRAR DEUDA</button>
+                <!-- Factura Form -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                    <h2 class="font-black text-slate-800 mb-4 text-sm uppercase">Nueva Factura</h2>
+                    <div class="space-y-3">
+                        <input type="text" id="fClient" placeholder="Nombre Cliente" class="w-full p-3 bg-slate-50 border rounded-xl text-sm outline-none">
+                        <input type="date" id="fDate" class="w-full p-3 bg-slate-50 border rounded-xl text-sm font-bold outline-none">
+                        <input type="number" id="fAmount" placeholder="Monto Total $" class="w-full p-3 bg-slate-50 border rounded-xl font-black text-xl text-orange-600 outline-none">
+                        <button id="btnSaveFact" class="w-full bg-slate-800 text-white py-3 rounded-xl font-black text-xs hover:bg-slate-900 uppercase">Registrar</button>
                     </div>
                 </div>
             </div>
@@ -137,207 +128,175 @@
     </div>
 
     <!-- Modal Cobro -->
-    <div id="modalPay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-6 z-50">
-        <div class="bg-white rounded-[40px] p-10 max-w-sm w-full shadow-2xl">
-            <h3 class="text-2xl font-black mb-2 text-slate-800">Procesar Pago</h3>
-            <p class="text-slate-500 mb-6 text-sm">Selecciona el método con el que recibiste el dinero.</p>
-            <div id="payDisplay" class="text-4xl font-black text-center text-blue-700 mb-8">$ 0.00</div>
-            <select id="payMethod" class="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl mb-8 font-black">
+    <div id="modalPay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl">
+            <h3 class="text-xl font-black mb-4 text-slate-800">Procesar Cobro</h3>
+            <div id="payDisplay" class="text-3xl font-black text-center text-blue-600 mb-6">$ 0.00</div>
+            <select id="payMethod" class="w-full p-4 bg-slate-50 border rounded-xl mb-6 font-bold text-sm">
                 <option value="Efectivo">Efectivo</option>
                 <option value="Pago Móvil">Pago Móvil</option>
                 <option value="Zelle">Zelle</option>
                 <option value="Transferencia">Transferencia</option>
                 <option value="USDT">USDT</option>
             </select>
-            <div class="grid grid-cols-2 gap-3">
-                <button id="confirmPay" class="bg-blue-700 text-white py-4 rounded-2xl font-black shadow-lg">CONFIRMAR</button>
-                <button onclick="document.getElementById('modalPay').classList.add('hidden')" class="bg-slate-100 text-slate-500 py-4 rounded-2xl font-black">CERRAR</button>
+            <div class="flex gap-2">
+                <button id="confirmPay" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-black text-sm">CONFIRMAR</button>
+                <button onclick="document.getElementById('modalPay').classList.add('hidden')" class="px-4 py-3 bg-slate-100 text-slate-500 rounded-xl font-bold text-sm">X</button>
             </div>
         </div>
     </div>
 
-    <!-- Toast de Notificación -->
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-8 py-4 rounded-2xl shadow-2xl opacity-0 transition-all duration-300 z-[100] font-black text-sm pointer-events-none uppercase tracking-widest">
-        Mensaje
-    </div>
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-xl shadow-xl opacity-0 transition-opacity duration-300 font-bold text-xs uppercase z-[100]"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Configuración inicial
+        // CONFIGURACIÓN (RULE 1 & 2)
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'stark-dist-master';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'stark-dist';
 
-        let sedeActual = "Caracas";
-        let datos = null;
-        let idFacturaACobrar = null;
+        // RUTA SIMPLIFICADA PARA GITHUB PAGES (RULE 1)
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'inventory_v1', 'master');
 
-        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'stark_dist_v5', 'master');
+        let localData = null;
+        let activeSede = "Caracas";
+        let currentFacturaId = null;
 
-        const updateStatus = (msg) => {
-            document.getElementById('authStatus').innerText = msg;
+        const setStatus = (msg, loading = false) => {
+            const el = document.getElementById('authStatus');
+            el.innerText = msg;
+            el.className = `text-[10px] font-bold uppercase tracking-widest ${loading ? 'text-blue-500 loading-pulse' : 'text-slate-400'}`;
         };
 
-        const notify = (m) => {
-            const el = document.getElementById('toast');
-            el.innerText = m;
-            el.style.opacity = '1';
-            el.style.transform = 'translate(-50%, -20px)';
-            setTimeout(() => {
-                el.style.opacity = '0';
-                el.style.transform = 'translate(-50%, 0)';
-            }, 3000);
+        const notify = (msg) => {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.opacity = '1';
+            setTimeout(() => t.style.opacity = '0', 3000);
         };
 
-        const renderUI = () => {
-            if (!datos) return;
+        const render = () => {
+            if (!localData) return;
 
-            const containerStock = document.getElementById('listaStock');
-            containerStock.innerHTML = '';
-            let tStock = 0;
+            // Render Stock
+            const stockBody = document.getElementById('listaStock');
+            stockBody.innerHTML = '';
+            let totalStockSede = 0;
+            const inventory = localData[activeSede] || {};
             
-            const inventarioSede = datos[sedeActual] || {};
-            Object.entries(inventarioSede).forEach(([prod, cant]) => {
-                tStock += cant;
-                containerStock.innerHTML += `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="px-8 py-4 font-bold text-slate-700">${prod}</td>
-                        <td class="px-8 py-4 text-xl font-black">${cant}</td>
-                        <td class="px-8 py-4">
-                            <span class="status-badge ${cant < 15 ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}">
-                                ${cant < 15 ? 'REPONER' : 'EXISTENCIA'}
+            Object.entries(inventory).forEach(([name, qty]) => {
+                totalStockSede += qty;
+                stockBody.innerHTML += `
+                    <tr>
+                        <td class="px-6 py-4 font-bold text-slate-700 text-sm">${name}</td>
+                        <td class="px-6 py-4 font-black text-lg">${qty}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase ${qty < 10 ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}">
+                                ${qty < 10 ? 'Crítico' : 'Bien'}
                             </span>
                         </td>
                     </tr>`;
             });
 
-            const containerFact = document.getElementById('listaFacturas');
-            containerFact.innerHTML = '';
-            let fP = 0, dR = 0;
-            const hoy = new Date();
-            hoy.setHours(0,0,0,0);
+            // Render Facturas
+            const factBody = document.getElementById('listaFacturas');
+            factBody.innerHTML = '';
+            let pendientes = 0;
+            let recaudado = 0;
+            const today = new Date().toISOString().split('T')[0];
+            const facturas = (localData.facturas && localData.facturas[activeSede]) ? localData.facturas[activeSede] : [];
 
-            const facturasSede = (datos.facturas && datos.facturas[sedeActual]) ? datos.facturas[sedeActual] : [];
+            facturas.forEach(f => {
+                if (f.pago) {
+                    recaudado += f.monto;
+                } else {
+                    pendientes++;
+                }
 
-            facturasSede.forEach(f => {
-                if (!f.pago) fP++; else dR += (f.monto || 0);
-                
-                const fechaVen = new Date(f.vence);
-                fechaVen.setHours(23,59,59,999);
-                const esVencida = fechaVen < hoy && !f.pago;
+                const esVencida = !f.pago && f.vence < today;
 
-                containerFact.innerHTML += `
-                    <tr class="${esVencida ? 'vencida' : 'hover:bg-slate-50'}">
-                        <td class="px-6 py-4">
-                            <div class="font-black text-slate-800 uppercase text-xs">${f.cliente}</div>
-                            <div class="text-[10px] text-slate-500 italic mt-1">${f.detalles || 'Sin descripción'}</div>
-                        </td>
-                        <td class="px-6 py-4 font-bold text-xs ${esVencida ? 'text-rose-600 font-black' : 'text-slate-400'}">
-                            ${f.vence ? f.vence.split('-').reverse().join('/') : 'S/F'}
-                            ${esVencida ? '<br><span class="text-[8px] uppercase">¡VENCIDA!</span>' : ''}
-                        </td>
-                        <td class="px-6 py-4 text-right font-black text-slate-900">$${(f.monto || 0).toFixed(2)}</td>
-                        <td class="px-6 py-4 text-center">
+                factBody.innerHTML += `
+                    <tr class="${esVencida ? 'vencida' : ''}">
+                        <td class="px-6 py-3 font-bold">${f.cliente}</td>
+                        <td class="px-6 py-3 font-bold ${esVencida ? 'text-red-600' : 'text-slate-400'}">${f.vence}</td>
+                        <td class="px-6 py-3 text-right font-black">$${f.monto.toFixed(2)}</td>
+                        <td class="px-6 py-3 text-right">
                             ${f.pago ? 
-                                `<span class="text-emerald-600 font-black text-[10px] bg-emerald-50 px-2 py-1 rounded-md uppercase border border-emerald-100">${f.metodo}</span>` : 
-                                `<button onclick="window.payModal('${f.id}', ${f.monto})" class="bg-blue-600 text-white px-4 py-1.5 rounded-xl font-black text-xs hover:bg-blue-700 transition-all shadow-md">COBRAR</button>`
+                                `<span class="text-emerald-500 font-black text-[9px] uppercase border px-2 py-1 rounded bg-emerald-50">${f.metodo}</span>` : 
+                                `<button onclick="window.initPay('${f.id}', ${f.monto})" class="bg-blue-600 text-white px-3 py-1 rounded-lg font-black hover:bg-blue-700">COBRAR</button>`
                             }
                         </td>
                     </tr>`;
             });
 
-            document.getElementById('statTotalStock').innerText = tStock;
-            document.getElementById('statFacturas').innerText = fP;
-            document.getElementById('statDinero').innerText = `$ ${dR.toLocaleString()}`;
-            document.getElementById('labelSede1').innerText = sedeActual;
+            document.getElementById('statTotalStock').innerText = totalStockSede;
+            document.getElementById('statFacturas').innerText = pendientes;
+            document.getElementById('statDinero').innerText = `$ ${recaudado.toLocaleString()}`;
+            document.getElementById('labelSede').innerText = activeSede;
         };
 
-        window.operarStock = async (tipo) => {
-            if (!datos) return notify("ESPERANDO CONEXIÓN...");
+        // Actions
+        window.updateStock = async (mode) => {
             const prod = document.getElementById('prodInput').value;
-            const cant = parseInt(document.getElementById('cantInput').value);
-            if (!cant || cant <= 0) return notify("CANTIDAD NO VÁLIDA");
-            const actual = (datos[sedeActual] && datos[sedeActual][prod]) ? datos[sedeActual][prod] : 0;
-            const nuevo = tipo === '+' ? actual + cant : actual - cant;
-            if (nuevo < 0) return notify("STOCK INSUFICIENTE");
+            const val = parseInt(document.getElementById('cantInput').value);
+            if (!val || val <= 0) return notify("CANTIDAD INVÁLIDA");
+
+            const current = (localData[activeSede] && localData[activeSede][prod]) ? localData[activeSede][prod] : 0;
+            const next = mode === '+' ? current + val : current - val;
+            if (next < 0) return notify("STOCK INSUFICIENTE");
+
             try {
-                await updateDoc(docRef, { [`${sedeActual}.${prod}`]: nuevo });
+                await updateDoc(docRef, { [`${activeSede}.${prod}`]: next });
                 document.getElementById('cantInput').value = '';
-                notify("INVENTARIO ACTUALIZADO ✅");
-            } catch (e) { notify("ERROR AL GUARDAR"); }
+                notify("SINCRO OK ✅");
+            } catch (e) { notify("ERROR DE RED"); }
         };
 
-        window.guardarFactura = async () => {
-            if (!datos) return notify("ESPERANDO CONEXIÓN...");
-            const cliente = document.getElementById('fClient').value.trim();
-            const detalles = document.getElementById('fDetails').value.trim();
-            const vence = document.getElementById('fDate').value;
-            const monto = parseFloat(document.getElementById('fAmount').value);
-            if (!cliente || !monto || !vence) return notify("FALTAN DATOS OBLIGATORIOS");
-            const nuevaFactura = { id: Date.now().toString(), cliente, detalles, vence, monto, pago: false };
-            const listadoActual = (datos.facturas && datos.facturas[sedeActual]) ? datos.facturas[sedeActual] : [];
-            const listado = [...listadoActual, nuevaFactura];
+        window.saveFactura = async () => {
+            const client = document.getElementById('fClient').value.trim();
+            const date = document.getElementById('fDate').value;
+            const amount = parseFloat(document.getElementById('fAmount').value);
+            if (!client || !date || !amount) return notify("COMPLETA LOS CAMPOS");
+
+            const newF = { id: Date.now().toString(), cliente: client, vence: date, monto: amount, pago: false };
+            const list = (localData.facturas && localData.facturas[activeSede]) ? [...localData.facturas[activeSede], newF] : [newF];
+
             try {
-                await updateDoc(docRef, { [`facturas.${sedeActual}`]: listado });
+                await updateDoc(docRef, { [`facturas.${activeSede}`]: list });
                 document.getElementById('fClient').value = '';
-                document.getElementById('fDetails').value = '';
                 document.getElementById('fAmount').value = '';
-                document.getElementById('fDate').value = '';
-                notify("FACTURA GENERADA ✅");
-            } catch (e) { notify("ERROR DE CONEXIÓN"); }
+                notify("FACTURA GUARDADA ✅");
+            } catch (e) { notify("FALLO AL GUARDAR"); }
         };
 
-        window.payModal = (id, monto) => {
-            idFacturaACobrar = id;
+        window.initPay = (id, monto) => {
+            currentFacturaId = id;
             document.getElementById('payDisplay').innerText = `$ ${monto.toFixed(2)}`;
             document.getElementById('modalPay').classList.remove('hidden');
         };
 
-        window.confirmarPago = async () => {
-            if (!datos) return;
-            const met = document.getElementById('payMethod').value;
-            const facturasSede = (datos.facturas && datos.facturas[sedeActual]) ? datos.facturas[sedeActual] : [];
-            const facturasActualizadas = facturasSede.map(f => 
-                f.id === idFacturaACobrar ? {...f, pago: true, metodo: met} : f
+        window.confirmPay = async () => {
+            const method = document.getElementById('payMethod').value;
+            const list = localData.facturas[activeSede].map(f => 
+                f.id === currentFacturaId ? {...f, pago: true, metodo: method} : f
             );
             try {
-                await updateDoc(docRef, { [`facturas.${sedeActual}`]: facturasActualizadas });
+                await updateDoc(docRef, { [`facturas.${activeSede}`]: list });
                 document.getElementById('modalPay').classList.add('hidden');
-                notify("PAGO REGISTRADO 🎉");
-            } catch (e) { notify("ERROR AL COBRAR"); }
+                notify("COBRO REALIZADO");
+            } catch (e) { notify("FALLO AL COBRAR"); }
         };
 
-        const ensureDBExists = async () => {
+        // Initialize Firebase (RULE 3)
+        const init = async () => {
             try {
-                const snap = await getDoc(docRef);
-                if (!snap.exists()) {
-                    const initial = {
-                        Caracas: { Heineken: 0, Budweiser: 0, Smirnoff: 0, Gatorade: 0 },
-                        Maracay: { Heineken: 0, Budweiser: 0, Smirnoff: 0, Gatorade: 0 },
-                        facturas: { Caracas: [], Maracay: [] }
-                    };
-                    await setDoc(docRef, initial);
-                }
-            } catch (e) { console.error("Error init DB:", e); }
-        };
-
-        const initPersistence = async () => {
-            try {
-                await enableIndexedDbPersistence(db);
-            } catch (err) {
-                console.warn("Persistence failed:", err.code);
-            }
-        };
-
-        const startAuth = async () => {
-            try {
-                updateStatus("AUTENTICANDO...");
-                // Configurar persistencia para GitHub Pages
+                setStatus("AUTENTICANDO...", true);
                 await setPersistence(auth, browserLocalPersistence);
                 
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -345,48 +304,47 @@
                 } else {
                     await signInAnonymously(auth);
                 }
-            } catch (error) {
-                console.error("Auth error:", error);
-                updateStatus("REINTENTANDO...");
-                setTimeout(startAuth, 3000);
+            } catch (e) {
+                console.error(e);
+                setStatus("ERROR DE INICIO");
             }
         };
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                updateStatus("SINCRONIZANDO...");
-                await initPersistence();
-                await ensureDBExists();
+                setStatus("SINCRO NUBE...", true);
+                
+                // Verificar existencia y crear si no hay nada (IMPORTANTE PARA GITHUB)
+                const snap = await getDoc(docRef);
+                if (!snap.exists()) {
+                    await setDoc(docRef, {
+                        Caracas: { Heineken: 0, Budweiser: 0, Smirnoff: 0, Gatorade: 0 },
+                        Maracay: { Heineken: 0, Budweiser: 0, Smirnoff: 0, Gatorade: 0 },
+                        facturas: { Caracas: [], Maracay: [] }
+                    });
+                }
 
-                onSnapshot(docRef, (snap) => {
-                    if (snap.exists()) {
-                        datos = snap.data();
-                        updateStatus("EN LÍNEA ✅");
-                        renderUI();
-                    } else {
-                        ensureDBExists();
+                onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        localData = docSnap.data();
+                        setStatus("SISTEMA EN LÍNEA ✅");
+                        render();
                     }
                 }, (err) => {
-                    console.error("Snapshot error:", err);
-                    updateStatus("ERROR DE NUBE");
+                    console.error(err);
+                    setStatus("FALLO DE CONEXIÓN");
                 });
-            } else {
-                updateStatus("SIN SESIÓN");
             }
         });
 
-        // Inicio
-        startAuth();
+        // Event Listeners
+        document.getElementById('sedeSelect').onchange = (e) => { activeSede = e.target.value; render(); };
+        document.getElementById('btnAdd').onclick = () => updateStock('+');
+        document.getElementById('btnRem').onclick = () => updateStock('-');
+        document.getElementById('btnSaveFact').onclick = saveFactura;
+        document.getElementById('confirmPay').onclick = confirmPay;
 
-        document.getElementById('sedeSelect').onchange = (e) => { 
-            sedeActual = e.target.value; 
-            renderUI(); 
-        };
-        document.getElementById('btnAdd').onclick = () => operarStock('+');
-        document.getElementById('btnRem').onclick = () => operarStock('-');
-        document.getElementById('btnSaveFact').onclick = guardarFactura;
-        document.getElementById('confirmPay').onclick = confirmarPago;
-
+        init();
     </script>
 </body>
 </html>
