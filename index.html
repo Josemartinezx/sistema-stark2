@@ -37,7 +37,7 @@
                         <option value="Maracay">Maracay</option>
                     </select>
                 </div>
-                <div id="authStatus" class="text-[10px] font-mono text-slate-400 bg-white px-2 py-1 rounded-md border italic text-center min-w-[150px]">Iniciando conexión...</div>
+                <div id="authStatus" class="text-[10px] font-mono text-slate-400 bg-white px-2 py-1 rounded-md border italic text-center min-w-[150px]">Estado: Desconectado</div>
             </div>
         </div>
 
@@ -163,8 +163,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Configuración inicial
         const firebaseConfig = JSON.parse(__firebase_config);
@@ -177,8 +177,11 @@
         let datos = null;
         let idFacturaACobrar = null;
 
-        // Path de la base de datos (RULE 1)
         const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'stark_dist_v5', 'master');
+
+        const updateStatus = (msg) => {
+            document.getElementById('authStatus').innerText = msg;
+        };
 
         const notify = (m) => {
             const el = document.getElementById('toast');
@@ -194,7 +197,6 @@
         const renderUI = () => {
             if (!datos) return;
 
-            // Renderizado de Inventario
             const containerStock = document.getElementById('listaStock');
             containerStock.innerHTML = '';
             let tStock = 0;
@@ -214,7 +216,6 @@
                     </tr>`;
             });
 
-            // Renderizado de Facturas
             const containerFact = document.getElementById('listaFacturas');
             containerFact.innerHTML = '';
             let fP = 0, dR = 0;
@@ -256,18 +257,14 @@
             document.getElementById('labelSede1').innerText = sedeActual;
         };
 
-        // Acciones de Base de Datos
         window.operarStock = async (tipo) => {
             if (!datos) return notify("ESPERANDO CONEXIÓN...");
-            
             const prod = document.getElementById('prodInput').value;
             const cant = parseInt(document.getElementById('cantInput').value);
             if (!cant || cant <= 0) return notify("CANTIDAD NO VÁLIDA");
-
             const actual = (datos[sedeActual] && datos[sedeActual][prod]) ? datos[sedeActual][prod] : 0;
             const nuevo = tipo === '+' ? actual + cant : actual - cant;
             if (nuevo < 0) return notify("STOCK INSUFICIENTE");
-
             try {
                 await updateDoc(docRef, { [`${sedeActual}.${prod}`]: nuevo });
                 document.getElementById('cantInput').value = '';
@@ -277,26 +274,14 @@
 
         window.guardarFactura = async () => {
             if (!datos) return notify("ESPERANDO CONEXIÓN...");
-
             const cliente = document.getElementById('fClient').value.trim();
             const detalles = document.getElementById('fDetails').value.trim();
             const vence = document.getElementById('fDate').value;
             const monto = parseFloat(document.getElementById('fAmount').value);
-            
             if (!cliente || !monto || !vence) return notify("FALTAN DATOS OBLIGATORIOS");
-
-            const nuevaFactura = {
-                id: Date.now().toString(),
-                cliente,
-                detalles,
-                vence,
-                monto,
-                pago: false
-            };
-
+            const nuevaFactura = { id: Date.now().toString(), cliente, detalles, vence, monto, pago: false };
             const listadoActual = (datos.facturas && datos.facturas[sedeActual]) ? datos.facturas[sedeActual] : [];
             const listado = [...listadoActual, nuevaFactura];
-
             try {
                 await updateDoc(docRef, { [`facturas.${sedeActual}`]: listado });
                 document.getElementById('fClient').value = '';
@@ -327,7 +312,6 @@
             } catch (e) { notify("ERROR AL COBRAR"); }
         };
 
-        // Inicialización Forzada de la DB Online
         const ensureDBExists = async () => {
             try {
                 const snap = await getDoc(docRef);
@@ -338,63 +322,62 @@
                         facturas: { Caracas: [], Maracay: [] }
                     };
                     await setDoc(docRef, initial);
-                    console.log("Base de datos creada exitosamente.");
                 }
-            } catch (e) {
-                console.error("Error al crear DB:", e);
-                // Si falla por permisos, el onSnapshot lo atrapará
+            } catch (e) { console.error("Error init DB:", e); }
+        };
+
+        const initPersistence = async () => {
+            try {
+                await enableIndexedDbPersistence(db);
+            } catch (err) {
+                console.warn("Persistence failed:", err.code);
             }
         };
 
-        // Lógica de Autenticación con Reintento (RULE 3)
-        const startAuth = async (retryCount = 0) => {
+        const startAuth = async () => {
             try {
-                document.getElementById('authStatus').innerText = `AUTENTICANDO... (${retryCount + 1})`;
+                updateStatus("AUTENTICANDO...");
+                // Configurar persistencia para GitHub Pages
+                await setPersistence(auth, browserLocalPersistence);
+                
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
             } catch (error) {
-                if (retryCount < 3) {
-                    setTimeout(() => startAuth(retryCount + 1), 2000);
-                } else {
-                    document.getElementById('authStatus').innerText = "FALLÓ AUTENTICACIÓN";
-                    notify("PROBLEMA DE CONEXIÓN");
-                }
+                console.error("Auth error:", error);
+                updateStatus("REINTENTANDO...");
+                setTimeout(startAuth, 3000);
             }
         };
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                document.getElementById('authStatus').innerText = "SINCRONIZANDO...";
-                
-                // Asegurar que existe el documento en la nube
+                updateStatus("SINCRONIZANDO...");
+                await initPersistence();
                 await ensureDBExists();
 
-                // Listener persistente
                 onSnapshot(docRef, (snap) => {
                     if (snap.exists()) {
                         datos = snap.data();
-                        document.getElementById('authStatus').innerText = "EN LÍNEA ✅";
+                        updateStatus("EN LÍNEA ✅");
                         renderUI();
                     } else {
-                        // Si por alguna razón el snap viene vacío pero el usuario está logueado, re-inicializamos
                         ensureDBExists();
                     }
                 }, (err) => {
-                    console.error("Error de Firestore:", err);
-                    document.getElementById('authStatus').innerText = "ERROR DE NUBE";
+                    console.error("Snapshot error:", err);
+                    updateStatus("ERROR DE NUBE");
                 });
             } else {
-                document.getElementById('authStatus').innerText = "DESCONECTADO";
+                updateStatus("SIN SESIÓN");
             }
         });
 
-        // Ejecución inicial
+        // Inicio
         startAuth();
 
-        // Controladores de eventos
         document.getElementById('sedeSelect').onchange = (e) => { 
             sedeActual = e.target.value; 
             renderUI(); 
