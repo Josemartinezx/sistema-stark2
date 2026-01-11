@@ -37,7 +37,7 @@
                         <option value="Maracay">Maracay</option>
                     </select>
                 </div>
-                <div id="authStatus" class="text-[10px] font-mono text-slate-400 bg-white px-2 py-1 rounded-md border italic text-center min-w-[150px]">Iniciando sesión...</div>
+                <div id="authStatus" class="text-[10px] font-mono text-slate-400 bg-white px-2 py-1 rounded-md border italic text-center min-w-[150px]">Iniciando conexión...</div>
             </div>
         </div>
 
@@ -166,6 +166,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Configuración inicial
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -176,7 +177,7 @@
         let datos = null;
         let idFacturaACobrar = null;
 
-        // Path específico según RULE 1
+        // Path de la base de datos (RULE 1)
         const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'stark_dist_v5', 'master');
 
         const notify = (m) => {
@@ -326,37 +327,41 @@
             } catch (e) { notify("ERROR AL COBRAR"); }
         };
 
-        // Función para inicializar datos si el documento no existe (Online Database creation)
-        const checkAndInitDB = async () => {
+        // Inicialización Forzada de la DB Online
+        const ensureDBExists = async () => {
             try {
                 const snap = await getDoc(docRef);
                 if (!snap.exists()) {
                     const initial = {
-                        Caracas: { Heineken: 100, Budweiser: 100, Smirnoff: 50, Gatorade: 200 },
-                        Maracay: { Heineken: 50, Budweiser: 50, Smirnoff: 20, Gatorade: 100 },
+                        Caracas: { Heineken: 0, Budweiser: 0, Smirnoff: 0, Gatorade: 0 },
+                        Maracay: { Heineken: 0, Budweiser: 0, Smirnoff: 0, Gatorade: 0 },
                         facturas: { Caracas: [], Maracay: [] }
                     };
                     await setDoc(docRef, initial);
-                    console.log("Base de datos inicializada online.");
+                    console.log("Base de datos creada exitosamente.");
                 }
             } catch (e) {
-                console.error("Error inicializando DB:", e);
+                console.error("Error al crear DB:", e);
+                // Si falla por permisos, el onSnapshot lo atrapará
             }
         };
 
-        // Inicio y Sincronización (RULE 3: Auth antes que Query)
-        const initAuth = async () => {
+        // Lógica de Autenticación con Reintento (RULE 3)
+        const startAuth = async (retryCount = 0) => {
             try {
-                document.getElementById('authStatus').innerText = "AUTENTICANDO...";
+                document.getElementById('authStatus').innerText = `AUTENTICANDO... (${retryCount + 1})`;
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
             } catch (error) {
-                console.error("Auth error:", error);
-                document.getElementById('authStatus').innerText = "ERROR DE ACCESO";
-                notify("ERROR DE AUTENTICACIÓN");
+                if (retryCount < 3) {
+                    setTimeout(() => startAuth(retryCount + 1), 2000);
+                } else {
+                    document.getElementById('authStatus').innerText = "FALLÓ AUTENTICACIÓN";
+                    notify("PROBLEMA DE CONEXIÓN");
+                }
             }
         };
 
@@ -365,17 +370,20 @@
                 document.getElementById('authStatus').innerText = "SINCRONIZANDO...";
                 
                 // Asegurar que existe el documento en la nube
-                await checkAndInitDB();
+                await ensureDBExists();
 
-                // Listener en tiempo real
+                // Listener persistente
                 onSnapshot(docRef, (snap) => {
                     if (snap.exists()) {
                         datos = snap.data();
                         document.getElementById('authStatus').innerText = "EN LÍNEA ✅";
                         renderUI();
+                    } else {
+                        // Si por alguna razón el snap viene vacío pero el usuario está logueado, re-inicializamos
+                        ensureDBExists();
                     }
                 }, (err) => {
-                    console.error("Firestore error:", err);
+                    console.error("Error de Firestore:", err);
                     document.getElementById('authStatus').innerText = "ERROR DE NUBE";
                 });
             } else {
@@ -383,11 +391,14 @@
             }
         });
 
-        // Iniciar flujo
-        initAuth();
+        // Ejecución inicial
+        startAuth();
 
-        // Eventos de botones
-        document.getElementById('sedeSelect').onchange = (e) => { sedeActual = e.target.value; renderUI(); };
+        // Controladores de eventos
+        document.getElementById('sedeSelect').onchange = (e) => { 
+            sedeActual = e.target.value; 
+            renderUI(); 
+        };
         document.getElementById('btnAdd').onclick = () => operarStock('+');
         document.getElementById('btnRem').onclick = () => operarStock('-');
         document.getElementById('btnSaveFact').onclick = guardarFactura;
